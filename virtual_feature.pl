@@ -1,6 +1,5 @@
 # Defines functions for this feature
 # XXX views
-# XXX editing master IPs
 # XXX backup and restore
 
 require 'virtualmin-slavedns-lib.pl';
@@ -269,6 +268,7 @@ return 0;
 # Returns an array of link objects for webmin modules for this feature
 sub feature_links
 {
+local ($d) = @_;
 return ( { 'mod' => $module_name,
            'desc' => $text{'links_link'},
            'page' => 'edit.cgi?dom='.$d->{'dom'},
@@ -294,9 +294,25 @@ else {
 
 # feature_backup(&domain, file, &opts, &all-opts)
 # Called to backup this feature for the domain to the given file. Must return 1
-# on success or 0 on failure
+# on success or 0 on failure.
+# Saves the named.conf block for this domain.
 sub feature_backup
 {
+local ($d, $file) = @_;
+&$virtual_server::first_print($text{'backup_conf'});
+local $z = &virtual_server::get_bind_zone($d->{'dom'});
+if ($z) {
+	local $lref = &read_file_lines($z->{'file'}, 1);
+	local $dstlref = &read_file_lines($file);
+	@$dstlref = @$lref[$z->{'line'} .. $z->{'eline'}];
+	&flush_file_lines($file);
+	&$virtual_server::second_print($virtual_server::text{'setup_done'});
+	return 1;
+	}
+else {
+	&$virtual_server::second_print($text{'backup_dnsnozone'});
+	return 0;
+	}
 }
 
 # feature_restore(&domain, file, &opts, &all-opts)
@@ -304,6 +320,7 @@ sub feature_backup
 # return 1 on success or 0 on failure
 sub feature_restore
 {
+local ($d, $file) = @_;
 }
 
 # feature_backup_name()
@@ -314,9 +331,21 @@ sub feature_backup_name
 
 # feature_validate(&domain)
 # Checks if this feature is properly setup for the virtual server, and returns
-# an error message if any problem is found
+# an error message if any problem is found.
+# Checks if the zone exists and is a slave.
 sub feature_validate
 {
+local ($d) = @_;
+local $z = &virtual_server::get_bind_zone($d->{'dom'});
+if ($z) {
+	local $type = &bind8::find("type", $z->{'members'});
+	if ($type && ($type->{'values'}->[0] eq 'slave' ||
+		      $type->{'values'}->[0] eq 'stub')) {
+		return undef;
+		}
+	return $text{'validate_etype'};
+	}
+return $text{'validate_ezone'};
 }
 
 # template_input(&template)

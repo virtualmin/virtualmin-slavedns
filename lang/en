@@ -21,3 +21,29 @@ tmpl_eip=Invalid master IP address : $1
 tmpl_eips=No master IP addresses entered
 
 links_link=Configure Slave DNS Zone
+
+edit_title=Configure Slave DNS Zone
+edit_header=Slave DNS zone settings
+edit_master=Master server IP addresses
+edit_ecannot=You are not allowed to configure this slave DNS zone
+edit_ezone=The zone could not be found in the BIND configuration
+edit_return=configuration form
+edit_recs=Records transferred from master
+edit_none=None transferred yet!
+edit_rname=Record name
+edit_rtype=Type
+edit_rvalue=Record values
+edit_adv=Advanced Configuration..
+
+save_err=Failed to configure slave DNS zone
+save_doing=Updating BIND configuration file ..
+save_emip=Invalid master IP address : $1
+save_emips=No master IP addresses entered
+
+validate_ezone=No zone was found in the BIND configuration
+validate_etype=The BIND zone is not a slave domain
+
+backup_conf=Backing up slave DNS zone configuration ..
+
+restore_conf=Restoring slave DNS zone configuration ..
+
