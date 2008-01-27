@@ -1,6 +1,5 @@
 # Defines functions for this feature
 # XXX views
-# XXX backup and restore
 
 require 'virtualmin-slavedns-lib.pl';
 $input_name = $module_name;
@@ -310,7 +309,7 @@ if ($z) {
 	return 1;
 	}
 else {
-	&$virtual_server::second_print($text{'backup_dnsnozone'});
+	&$virtual_server::second_print($virtual_server::text{'backup_dnsnozone'});
 	return 0;
 	}
 }
@@ -321,12 +320,41 @@ else {
 sub feature_restore
 {
 local ($d, $file) = @_;
+&$virtual_server::first_print($text{'restore_conf'});
+
+if (defined(&virtual_server::obtain_lock_dns)) {
+	&virtual_server::obtain_lock_dns($d, 1);
+	}
+
+local $z = &virtual_server::get_bind_zone($d->{'dom'});
+local $rv;
+if ($z) {
+	local $lref = &read_file_lines($z->{'file'});
+	local $srclref = &read_file_lines($file, 1);
+	splice(@$lref, $z->{'line'}, $z->{'eline'}-$z->{'line'}+1, @$srclref);
+	&flush_file_lines($z->{'file'});
+
+	&virtual_server::register_post_action(\&virtual_server::restart_bind);
+	&$virtual_server::second_print($virtual_server::text{'setup_done'});
+	$rv = 1;
+	}
+else {
+	&$virtual_server::second_print(
+		$virtual_server::text{'backup_dnsnozone'});
+	$rv = 0;
+	}
+
+if (defined(&virtual_server::release_lock_dns)) {
+	&virtual_server::release_lock_dns($d, 1);
+	}
+return $rv;
 }
 
 # feature_backup_name()
 # Returns a description for what is backed up for this feature
 sub feature_backup_name
 {
+return $text{'backup_name'};
 }
 
 # feature_validate(&domain)

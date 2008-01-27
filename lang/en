@@ -44,6 +44,7 @@ validate_ezone=No zone was found in the BIND configuration
 validate_etype=The BIND zone is not a slave domain
 
 backup_conf=Backing up slave DNS zone configuration ..
+backup_name=BIND configuration for the slave zone.
 
 restore_conf=Restoring slave DNS zone configuration ..
 
