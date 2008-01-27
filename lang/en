@@ -1,0 +1,23 @@
+feat_name=Slave DNS domain
+feat_losing=The system will no longer act as a slave DNS server for this domain
+feat_label=Setup slave DNS zone?
+feat_echeck=This plugin requires that the local BIND DNS server be installed and running
+feat_emaster=A slave DNS zone cannot be created until a default master IP address has been specified in the server template (in the <b>Plugin options</b> section)
+feat_clash=A DNS zone with the same name already exists on this system
+feat_clash2=Both the slave and master DNS zone features cannot be enabled for the same domain
+
+setup_bind=Adding slave DNS zone ..
+setup_emaster=.. no master IP addresses defined in template!
+setup_done=.. created, with master IP address $1
+
+delete_bind=Deleting slave DNS zone ..
+
+modify_bind=Renaming slave DNS zone ..
+
+tmpl_master=Default slave zone masters
+tmpl_notset=Not set yet
+tmpl_ips=Listed IP addresses
+tmpl_eip=Invalid master IP address : $1
+tmpl_eips=No master IP addresses entered
+
+links_link=Configure Slave DNS Zone
