@@ -1,3 +1,4 @@
 desc=Virtualmin Slave DNS Plugin
 depends=bind8
 hidden=1
+version=1.0

@@ -1,5 +1,4 @@
 # Defines functions for this feature
-# XXX views
 
 require 'virtualmin-slavedns-lib.pl';
 $input_name = $module_name;
@@ -125,10 +124,54 @@ push(@{$dir->{'members'}}, { 'name' => 'file',
 &close_tempfile(ZONE);
 &bind8::set_ownership(&bind8::make_chroot($file));
 
-# Add to .conf file
+# Work out where to add
 local $pconf;
-$dir->{'file'} = &bind8::add_to_file();
-$pconf = &bind8::get_config_parent($dir->{'file'});
+local $indent = 0;
+if ($tmpl->{$module_name.'view'}) {
+	# Adding inside a view. This may use named.conf, or an include
+	# file references inside the view, if any
+	$pconf = &bind8::get_config_parent();
+	local $view = &virtual_server::get_bind_view($conf,
+			$tmpl->{$module_name.'view'});
+	if ($view) {
+		local $addfile = &bind8::add_to_file();
+		local $addfileok;
+		if ($bind8::config{'zones_file'} &&
+		    $view->{'file'} ne $bind8::config{'zones_file'}) {
+			# BIND module config asks for a file .. make
+			# sure it is included in the view
+			foreach my $vm (@{$view->{'members'}}) {
+				if ($vm->{'file'} eq $addfile) {
+					# Add file is OK
+					$addfileok = 1;
+					}
+				}
+			}
+
+		if (!$addfileok) {
+			# Add to named.conf
+			$pconf = $view;
+			$indent = 1;
+			$dir->{'file'} = $view->{'file'};
+			}
+		else {
+			# Add to the file
+			$dir->{'file'} = $addfile;
+			$pconf = &bind8::get_config_parent($addfile);
+			}
+		}
+	else {
+		&error(&virtual_server::text('setup_ednsview',
+			     $tmpl->{$module_name.'view'}));
+		}
+	}
+else {
+	# Adding at top level .. but perhaps in a different file
+	$dir->{'file'} = &bind8::add_to_file();
+	$pconf = &bind8::get_config_parent($dir->{'file'});
+	}
+
+# Add to .conf file
 &bind8::save_directive($pconf, undef, [ $dir ], $indent);
 &flush_file_lines($dir->{'file'});
 unlink($bind8::zone_names_cache);
@@ -381,15 +424,31 @@ return $text{'validate_ezone'};
 sub template_input
 {
 local ($tmpl) = @_;
+
+# Master IPs input
 local $v = $tmpl->{$module_name."master"};
 $v = "none" if (!defined($v) && $tmpl->{'default'});
-return &ui_table_row($text{'tmpl_master'},
+local $rv;
+$rv .= &ui_table_row($text{'tmpl_master'},
 	&ui_radio($input_name."_mode",
 		$v eq "" ? 0 : $v eq "none" ? 1 : 2,
 		[ $tmpl->{'default'} ? ( ) : ( [ 0, $text{'default'} ] ),
 		  [ 1, $text{'tmpl_notset'} ],
 		  [ 2, $text{'tmpl_ips'} ] ])."\n".
 	&ui_textbox($input_name, $v eq "none" ? undef : $v, 30));
+
+# Add to view input, if any
+&virtual_server::require_bind();
+local $conf = &bind8::get_config();
+local @views = &bind8::find("view", $conf);
+if (@views) {
+	$rv .= &ui_table_row($text{'tmpl_view'},
+                &ui_select($input_name."_view", $tmpl->{$module_name."view"},
+                        [ [ "", $virtual_server::text{'newdns_noview'} ],
+                          map { [ $_->{'values'}->[0] ] } @views ]));
+	}
+
+return $rv;
 }
 
 # template_parse(&template, &in)
@@ -398,6 +457,8 @@ return &ui_table_row($text{'tmpl_master'},
 sub template_parse
 {
 local ($tmpl, $in) = @_;
+
+# Parse master IPs field
 if ($in->{$input_name.'_mode'} == 0) {
         $tmpl->{$module_name."master"} = "";
         }
@@ -412,6 +473,11 @@ else {
 	@ips || &error($text{'tmpl_eips'});
         $tmpl->{$module_name."master"} = join(" ", @ips);
         }
+
+# Parse view field
+if (defined($in->{$input_name.'_view'})) {
+	$tmpl->{$module_name."view"} = $in->{$input_name.'_view'};
+	}
 }
 
 1;

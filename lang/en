@@ -19,6 +19,7 @@ tmpl_notset=Not set yet
 tmpl_ips=Listed IP addresses
 tmpl_eip=Invalid master IP address : $1
 tmpl_eips=No master IP addresses entered
+tmpl_view=Add slave zones to view
 
 links_link=Configure Slave DNS Zone
 
