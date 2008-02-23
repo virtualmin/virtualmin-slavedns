@@ -49,3 +49,4 @@ backup_name=BIND configuration for the slave zone.
 
 restore_conf=Restoring slave DNS zone configuration ..
 
+log_slave=Updated master DNS servers for $1

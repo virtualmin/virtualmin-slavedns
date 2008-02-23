@@ -13,9 +13,12 @@ if ($in{'adv'}) {
 
 # Get and check the domain
 &can_edit_slave($in{'dom'}) || &error($text{'edit_ecannot'});
+$d = &virtual_server::get_domain_by("dom", $in{'dom'});
+if (defined(&virtual_server::obtain_lock_dns)) {
+	&virtual_server::obtain_lock_dns($d, 1);
+	}
 $z = &virtual_server::get_bind_zone($in{'dom'});
 $z || &error($text{'edit_ezone'});
-$d = &virtual_server::get_domain_by("dom", $in{'dom'});
 &virtual_server::require_bind();
 
 # Validate inputs
@@ -45,6 +48,11 @@ if ($allow) {
 
 # Restart BIND
 &virtual_server::restart_bind($d);
+
+if (defined(&virtual_server::release_lock_dns)) {
+	&virtual_server::release_lock_dns($d, 1);
+	}
+&webmin_log("save", undef, $in{'dom'});
 
 &ui_print_footer("edit.cgi?dom=$in{'dom'}", $text{'edit_return'});
 
