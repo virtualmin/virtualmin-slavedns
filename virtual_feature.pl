@@ -173,7 +173,7 @@ else {
 
 # Add to .conf file
 &bind8::save_directive($pconf, undef, [ $dir ], $indent);
-&flush_file_lines($dir->{'file'});
+&flush_file_lines(&bind8::make_chroot($dir->{'file'}));
 unlink($bind8::zone_names_cache);
 undef(@bind8::list_zone_names_cache);
 
@@ -268,7 +268,7 @@ if ($z) {
 	local $rootfile = &bind8::make_chroot($z->{'file'});
 	local $lref = &read_file_lines($rootfile);
 	splice(@$lref, $z->{'line'}, $z->{'eline'} - $z->{'line'} + 1);
-	&flush_file_lines($z->{'file'});
+	&flush_file_lines($rootfile);
 
 	# Clear zone names caches
 	unlink($bind8::zone_names_cache);
@@ -372,10 +372,11 @@ if (defined(&virtual_server::obtain_lock_dns)) {
 local $z = &virtual_server::get_bind_zone($d->{'dom'});
 local $rv;
 if ($z) {
-	local $lref = &read_file_lines($z->{'file'});
+	local $rootfile = &bind8::make_chroot($z->{'file'});
+	local $lref = &read_file_lines($rootfile);
 	local $srclref = &read_file_lines($file, 1);
 	splice(@$lref, $z->{'line'}, $z->{'eline'}-$z->{'line'}+1, @$srclref);
-	&flush_file_lines($z->{'file'});
+	&flush_file_lines($rootfile);
 
 	&virtual_server::register_post_action(\&virtual_server::restart_bind);
 	&$virtual_server::second_print($virtual_server::text{'setup_done'});
