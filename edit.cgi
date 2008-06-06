@@ -29,9 +29,7 @@ if ($file) {
 	@recs = &bind8::read_zone_file(
 		&bind8::make_chroot($file->{'values'}->[0]));
 	if (@recs) {
-		$rtable = &ui_columns_start([ $text{'edit_rname'},
-					      $text{'edit_rtype'},
-					      $text{'edit_rvalue'} ]);
+		@table = ( );
 		foreach $r (grep { $_->{'type'} ne 'SOA' } @recs) {
 			$name = $r->{'name'};
 			if ($name =~ /^(\S+)\.$in{'dom'}\.$/) {
@@ -44,12 +42,14 @@ if ($file) {
 			else {
 				$type = $r->{'type'};
 				}
-			$rtable .= &ui_columns_row([
-				$name, $type, join(" ", @{$r->{'values'}})
-				]);
+			push(@table, [ $name, $type,
+				       join(" ", @{$r->{'values'}}) ]);
 			}
-		$rtable .= &ui_columns_end();
-		print &ui_table_row($text{'edit_recs'}, $rtable);
+		print &ui_table_row($text{'edit_recs'},
+			&ui_columns_table(
+			  [ $text{'edit_rname'}, $text{'edit_rtype'},
+			    $text{'edit_rvalue'} ],
+			  undef, \@table));
 		}
 	else {
 		# None yet!
