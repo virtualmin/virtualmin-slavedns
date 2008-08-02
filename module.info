@@ -3,3 +3,4 @@ depends=bind8 1.420
 hidden=1
 version=1.2
 desc_nl=Virtualmin Slave DNS Plugin
+feedback=jcameron@webmin.com
