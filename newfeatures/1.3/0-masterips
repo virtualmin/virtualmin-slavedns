@@ -1,0 +1,5 @@
+desc=Set slave DNS master IPs at domain creation time
+html=When creating a virtual server with the slave DNS domain feature enabled, the IP addresses of the masters can be set on the Create Virtual Server page.
+master=1
+reseller=1
+owner=1

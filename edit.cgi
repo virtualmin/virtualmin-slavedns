@@ -15,7 +15,7 @@ $d = &virtual_server::get_domain_by("dom", $in{'dom'});
 
 print &ui_form_start("save.cgi");
 print &ui_hidden("dom", $in{'dom'});
-print &ui_table_start($text{'edit_header'}, undef, 2, [ "width=30%" ]);
+print &ui_table_start($text{'edit_header'}, undef, 2);
 
 # Master IP addresses
 $masters = &bind8::find('masters', $z->{'members'});
@@ -32,6 +32,7 @@ if ($file) {
 		@table = ( );
 		foreach $r (grep { $_->{'type'} ne 'SOA' } @recs) {
 			$name = $r->{'name'};
+			next if (!$name);	# Some $ directive
 			if ($name =~ /^(\S+)\.$in{'dom'}\.$/) {
 				$name = $1;
 				}

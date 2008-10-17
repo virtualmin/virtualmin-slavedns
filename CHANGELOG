@@ -1,0 +1,2 @@
+---- Changes since 1.2 ----
+Master DNS servers can now be specified on the domain creation form, instead of just in the server template.

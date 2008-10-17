@@ -5,6 +5,8 @@ feat_echeck=This plugin requires that the local BIND DNS server be installed and
 feat_emaster=A slave DNS zone cannot be created until a default master IP address has been specified in the server template (in the <b>Plugin options</b> section)
 feat_clash=A DNS zone with the same name already exists on this system
 feat_clash2=Both the slave and master DNS zone features cannot be enabled for the same domain
+feat_master=Slave zone master DNS servers
+feat_mastertmpl=From template
 
 setup_bind=Adding slave DNS zone ..
 setup_emaster=.. no master IP addresses defined in template!

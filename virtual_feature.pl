@@ -50,7 +50,8 @@ sub feature_depends
 {
 local ($d) = @_;
 local $tmpl = &virtual_server::get_template($d->{'template'});
-local $mip = $tmpl->{$module_name."master"};
+local $mip = $d->{$module_name."master"} ||
+	     $tmpl->{$module_name."master"};
 return $mip eq '' || $mip eq 'none' ? $text{'feat_emaster'} : undef;
 }
 
@@ -82,7 +83,8 @@ sub feature_setup
 {
 local ($d) = @_;
 local $tmpl = &virtual_server::get_template($d->{'template'});
-local @mips = split(/\s+/, $tmpl->{$module_name."master"});
+local @mips = split(/\s+/, $d->{$module_name."master"} ||
+			   $tmpl->{$module_name."master"});
 &$virtual_server::first_print($text{'setup_bind'});
 if (!@mips) {
 	&$virtual_server::second_print($text{'setup_emaster'});
@@ -107,7 +109,7 @@ local $dir = {
 	};
 
 # Allow masters to update
-my $also = { 'name' => 'allow-update',
+my $also = { 'name' => 'allow-notify',
 	     'type' => 1,
 	     'members' => [ ] };
 foreach my $ip (@mips) {
@@ -418,6 +420,68 @@ if ($z) {
 	return $text{'validate_etype'};
 	}
 return $text{'validate_ezone'};
+}
+
+# Always show master DNS server input
+sub feature_inputs_show
+{
+return 1;
+}
+
+# feature_inputs([&domain])
+# Returns a field for master DNS server(s)
+sub feature_inputs
+{
+local ($d) = @_;
+local $tmpl = &virtual_server::get_template($d ? $d->{'template'} : 0);
+return &ui_table_row($text{'feat_master'},
+	&ui_opt_textbox($input_name."_master",
+			$tmpl->{$module_name."master"}, 30,
+			$text{'feat_mastertmpl'}));
+}
+
+# feature_inputs_parse(&domain, &in)
+# Update the domain object with a custom master DNS server
+sub feature_inputs_parse
+{
+local ($d, $in) = @_;
+if (defined($in->{$input_name."_master"}) &&
+    !$in->{$input_name."_master_def"}) {
+	local @ips = split(/\s+/, $in->{$input_name."_master"});
+	foreach my $ip (@ips) {
+		&check_ipaddress($ip) || return &text('tmpl_eip', $ip);
+		}
+	@ips || return $text{'tmpl_eips'};
+	$d->{$module_name."master"} = $in->{$input_name."_master"};
+	}
+return undef;
+}
+
+# feature_args(&domain)
+# Return command-line arguments for domain registration
+sub feature_args
+{
+return ( { 'name' => $module_name."-master",
+	   'value' => 'nameservers',
+	   'opt' => 1,
+	   'desc' => 'Master DNS servers for slave domain' },
+       );
+}
+
+# feature_args_parse(&domain, &args)
+# Parse command-line arguments from feature_args
+sub feature_args_parse
+{
+local ($d, $args) = @_;
+if (defined($args->{$module_name."-master"})) {
+	local @ips = split(/\s+/, $args->{$module_name."-master"});
+	foreach my $ip (@ips) {
+		&check_ipaddress($ip) || return "Invalid master DNS server IP address $ip";
+		}
+	@ips || return "No master DNS server IP addresses given";
+	$d->{$module_name."master"} = join(" ", @ips);
+	}
+return undef;
 }
 
 # template_input(&template)
