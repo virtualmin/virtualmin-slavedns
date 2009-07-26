@@ -48,11 +48,14 @@ return &foreign_installed("bind8", 1) == 2 ? undef :
 # Checks for a default master IP address in template.
 sub feature_depends
 {
-local ($d) = @_;
-local $tmpl = &virtual_server::get_template($d->{'template'});
-local $mip = $d->{$module_name."master"} ||
-	     $tmpl->{$module_name."master"};
-return $mip eq '' || $mip eq 'none' ? $text{'feat_emaster'} : undef;
+local ($d, $oldd) = @_;
+if (!$oldd || !$oldd->{$module_name}) {
+	local $tmpl = &virtual_server::get_template($d->{'template'});
+	local $mip = $d->{$module_name."master"} ||
+		     $tmpl->{$module_name."master"};
+	return $text{'feat_emaster'} if ($mip eq '' || $mip eq 'none');
+	}
+return undef;
 }
 
 # feature_clash(&domain)
