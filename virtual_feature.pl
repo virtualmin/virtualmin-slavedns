@@ -112,7 +112,7 @@ local $dir = {
 	};
 
 # Allow masters to update
-my $also = { 'name' => 'allow-notify',
+my $also = { 'name' => 'allow-update',
 	     'type' => 1,
 	     'members' => [ ] };
 foreach my $ip (@mips) {
