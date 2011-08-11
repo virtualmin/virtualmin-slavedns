@@ -19,6 +19,7 @@ if (defined(&virtual_server::obtain_lock_dns)) {
 	}
 $z = &virtual_server::get_bind_zone($in{'dom'});
 $z || &error($text{'edit_ezone'});
+$rfile = &bind8::find('file', $z->{'members'});
 &virtual_server::require_bind();
 
 # Validate inputs
@@ -44,7 +45,7 @@ $masters = &bind8::find('masters', $z->{'members'});
 $oldmasters = { %$masters };
 $masters->{'members'} = [ map { { 'name' => $_ } } @mips ];
 &bind8::save_directive($z, [ $oldmasters ], [ $masters ], 1);
-$allow = &bind8::find('allow-update', $z->{'members'});
+$allow = &bind8::find('allow-notify', $z->{'members'});
 if ($allow) {
 	$oldallow = { %$allow };
 	$allow->{'members'} = [ map { { 'name' => $_ } } @mips ];
@@ -53,8 +54,17 @@ if ($allow) {
 &flush_file_lines($z->{'file'});
 &$virtual_server::second_print($virtual_server::text{'setup_done'});
 
-# Restart BIND
-&virtual_server::restart_bind($d);
+# Clear the zone file, to force a re-transfer
+if ($rfile) {
+	$rfilev = $rfile->{'value'};
+	&open_tempfile(ZONE, ">".&bind8::make_chroot($rfilev), 0, 1);
+	&close_tempfile(ZONE);
+	&bind8::set_ownership(&bind8::make_chroot($rfilev));
+	}
+if (&bind8::is_bind_running()) {
+	&bind8::stop_bind();
+	&bind8::start_bind();
+	}
 
 # Run the after command
 &virtual_server::set_domain_envs($d, "MODIFY_DOMAIN", undef, $d);
