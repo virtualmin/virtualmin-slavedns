@@ -2,5 +2,5 @@ desc=Virtualmin Slave DNS Plugin
 depends=bind8 1.420
 hidden=1
 version=1.6
-desc_nl=Virtualmin Slave DNS Plugin
+desc_nl=Virtualmin Slaaf DNS Plugin
 feedback=jcameron@webmin.com

@@ -1,3 +1,4 @@
+__norefs=1
 backup_conf=Backup Slaaf DNS zone configuratie ..
 backup_name=BIND configuratie voor de slaaf zone.
 delete_bind=Verwijderen slaaf DNS zone ..
@@ -37,7 +38,7 @@ tmpl_eip=Ongeldig master IP adres : $1
 tmpl_eips=Geen master IP adres ingevuld
 tmpl_ips=Lijst met IP adressen
 tmpl_master=Standaard slaaf zone masters
-tmpl_notset=Nog niet gezet
+tmpl_notset=Nog niet ingesteld
 tmpl_view=Toevoegen van slaaf zones om te bekijken
 validate_etype=De BIND zone is niet een slaaf domein
 validate_ezone=Er is geen zone gevonden in de BIND configuratie
