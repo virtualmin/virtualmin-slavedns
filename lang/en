@@ -1,6 +1,7 @@
 feat_name=Slave DNS domain
 feat_losing=The system will no longer act as a slave DNS server for this domain
 feat_label=Setup slave DNS zone?
+feat_label2=Slave DNS zone
 feat_echeck=This plugin requires that the local BIND DNS server be installed and running
 feat_emaster=A slave DNS zone cannot be created until a default master IP address has been specified in the server template (in the <b>Plugin options</b> section)
 feat_clash=A DNS zone with the same name already exists on this system
