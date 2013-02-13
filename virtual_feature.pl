@@ -340,6 +340,11 @@ else {
         }
 }
 
+sub feature_modules
+{
+return ( [ $module_name, $text{'feat_module'} ] );
+}
+
 # feature_backup(&domain, file, &opts, &all-opts)
 # Called to backup this feature for the domain to the given file. Must return 1
 # on success or 0 on failure.
