@@ -59,16 +59,19 @@ if (!$oldd || !$oldd->{$module_name}) {
 return undef;
 }
 
-# feature_clash(&domain)
+# feature_clash(&domain, [field])
 # Returns undef if there is no clash for this domain for this feature, or
 # an error message if so.
 # Checks for a DNS zone with the same name.
 sub feature_clash
 {
-local ($d) = @_;
-local $z = &virtual_server::get_bind_zone($d->{'dom'});
-return $z ? $text{'feat_clash'} :
-       $d->{'dns'} ? $text{'feat_clash2'} : undef;
+local ($d, $field) = @_;
+if (!$field || $field eq "dom") {
+	local $z = &virtual_server::get_bind_zone($d->{'dom'});
+	return $z ? $text{'feat_clash'} :
+	       $d->{'dns'} ? $text{'feat_clash2'} : undef;
+	}
+return undef;
 }
 
 # feature_suitable([&parentdom], [&aliasdom], [&subdom])
