@@ -359,9 +359,9 @@ local ($d, $file) = @_;
 local $z = &virtual_server::get_bind_zone($d->{'dom'});
 if ($z) {
 	local $lref = &read_file_lines($z->{'file'}, 1);
-	local $dstlref = &read_file_lines($file);
+	local $dstlref = &virtual_server::read_file_lines_as_domain_user($d, $file);
 	@$dstlref = @$lref[$z->{'line'} .. $z->{'eline'}];
-	&flush_file_lines($file);
+	&virtual_server::flush_file_lines_as_domain_user($d, $file);
 	&$virtual_server::second_print($virtual_server::text{'setup_done'});
 	return 1;
 	}
