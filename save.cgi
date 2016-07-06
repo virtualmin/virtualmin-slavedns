@@ -1,5 +1,8 @@
 #!/usr/local/bin/perl
 # Update master server IPs
+use strict;
+use warnings;
+our (%text, %in);
 
 require 'virtualmin-slavedns-lib.pl';
 &ReadParse();
@@ -13,25 +16,25 @@ if ($in{'adv'}) {
 
 # Get and check the domain
 &can_edit_slave($in{'dom'}) || &error($text{'edit_ecannot'});
-$d = &virtual_server::get_domain_by("dom", $in{'dom'});
+my $d = &virtual_server::get_domain_by("dom", $in{'dom'});
 if (defined(&virtual_server::obtain_lock_dns)) {
 	&virtual_server::obtain_lock_dns($d, 1);
 	}
-$z = &virtual_server::get_bind_zone($in{'dom'});
+my $z = &virtual_server::get_bind_zone($in{'dom'});
 $z || &error($text{'edit_ezone'});
-$rfile = &bind8::find('file', $z->{'members'});
+my $rfile = &bind8::find('file', $z->{'members'});
 &virtual_server::require_bind();
 
 # Validate inputs
-@mips = split(/\s+/, $in{'master'});
-foreach $ip (@mips) {
+my @mips = split(/\s+/, $in{'master'});
+foreach my $ip (@mips) {
 	&check_ipaddress($ip) || &error(&text('save_emip', $ip));
 	}
 @mips || &error($text{'save_emips'});
 
 # Run the before command
 &virtual_server::set_domain_envs($d, "MODIFY_DOMAIN", $d);
-$merr = &virtual_server::making_changes();
+my $merr = &virtual_server::making_changes();
 &virtual_server::reset_domain_envs($d);
 &error(&virtual_server::text('save_emaking', "<tt>$merr</tt>"))
 	if (defined($merr));
@@ -40,14 +43,16 @@ $merr = &virtual_server::making_changes();
 			    $text{'edit_title'}, "");
 
 # Update the .conf file
+no warnings "once";
 &$virtual_server::first_print($text{'save_doing'});
-$masters = &bind8::find('masters', $z->{'members'});
-$oldmasters = { %$masters };
+use warnings "once";
+my $masters = &bind8::find('masters', $z->{'members'});
+my $oldmasters = { %$masters };
 $masters->{'members'} = [ map { { 'name' => $_ } } @mips ];
 &bind8::save_directive($z, [ $oldmasters ], [ $masters ], 1);
-$allow = &bind8::find('allow-notify', $z->{'members'});
+my $allow = &bind8::find('allow-notify', $z->{'members'});
 if ($allow) {
-	$oldallow = { %$allow };
+	my $oldallow = { %$allow };
 	$allow->{'members'} = [ map { { 'name' => $_ } } @mips ];
 	&bind8::save_directive($z, [ $oldallow ], [ $allow ], 1);
 	}
@@ -56,9 +61,11 @@ if ($allow) {
 
 # Clear the zone file, to force a re-transfer
 if ($rfile) {
-	$rfilev = $rfile->{'value'};
+	my $rfilev = $rfile->{'value'};
+	no strict "subs";
 	&open_tempfile(ZONE, ">".&bind8::make_chroot($rfilev), 0, 1);
 	&close_tempfile(ZONE);
+	use strict "subs";
 	&bind8::set_ownership(&bind8::make_chroot($rfilev));
 	}
 if (&bind8::is_bind_running()) {
@@ -80,4 +87,3 @@ if (defined(&virtual_server::release_lock_dns)) {
 &webmin_log("save", undef, $in{'dom'});
 
 &ui_print_footer("edit.cgi?dom=$in{'dom'}", $text{'edit_return'});
-

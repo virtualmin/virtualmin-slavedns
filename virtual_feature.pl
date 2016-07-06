@@ -1,7 +1,11 @@
 # Defines functions for this feature
+use strict;
+use warnings;
+our (%text, %in);
+our $module_name;
 
 require 'virtualmin-slavedns-lib.pl';
-$input_name = $module_name;
+my $input_name = $module_name;
 $input_name =~ s/[^A-Za-z0-9]/_/g;
 
 # feature_name()
@@ -23,7 +27,7 @@ return $text{'feat_losing'};
 # editing form
 sub feature_label
 {
-local ($edit) = @_;
+my ($edit) = @_;
 return $edit ? $text{'feat_label2'} : $text{'feat_label'};
 }
 
@@ -49,10 +53,10 @@ return &foreign_installed("bind8", 1) == 2 ? undef :
 # Checks for a default master IP address in template.
 sub feature_depends
 {
-local ($d, $oldd) = @_;
+my ($d, $oldd) = @_;
 if (!$oldd || !$oldd->{$module_name}) {
-	local $tmpl = &virtual_server::get_template($d->{'template'});
-	local $mip = $d->{$module_name."master"} ||
+	my $tmpl = &virtual_server::get_template($d->{'template'});
+	my $mip = $d->{$module_name."master"} ||
 		     $tmpl->{$module_name."master"};
 	return $text{'feat_emaster'} if ($mip eq '' || $mip eq 'none');
 	}
@@ -65,9 +69,9 @@ return undef;
 # Checks for a DNS zone with the same name.
 sub feature_clash
 {
-local ($d, $field) = @_;
+my ($d, $field) = @_;
 if (!$field || $field eq "dom") {
-	local $z = &virtual_server::get_bind_zone($d->{'dom'});
+	my $z = &virtual_server::get_bind_zone($d->{'dom'});
 	return $z ? $text{'feat_clash'} :
 	       $d->{'dns'} ? $text{'feat_clash2'} : undef;
 	}
@@ -80,7 +84,7 @@ return undef;
 # Doesn't make sense for alias domains.
 sub feature_suitable
 {
-local ($parentdom, $aliasdom, $subdom) = @_;
+my ($parentdom, $aliasdom, $subdom) = @_;
 return !$aliasdom;
 }
 
@@ -88,9 +92,9 @@ return !$aliasdom;
 # Called when this feature is added, with the domain object as a parameter
 sub feature_setup
 {
-local ($d) = @_;
-local $tmpl = &virtual_server::get_template($d->{'template'});
-local @mips = split(/\s+/, $d->{$module_name."master"} ||
+my ($d) = @_;
+my $tmpl = &virtual_server::get_template($d->{'template'});
+my @mips = split(/\s+/, $d->{$module_name."master"} ||
 			   $tmpl->{$module_name."master"});
 &$virtual_server::first_print($text{'setup_bind'});
 if (!@mips) {
@@ -103,8 +107,8 @@ if (defined(&virtual_server::obtain_lock_dns)) {
 
 # Create the slave zone directive
 &virtual_server::require_bind();
-local $conf = &bind8::get_config();
-local $dir = {
+my $conf = &bind8::get_config();
+my $dir = {
 	 'name' => 'zone',
 	 'values' => [ $d->{'dom'} ],
 	 'type' => 1,
@@ -125,26 +129,28 @@ foreach my $ip (@mips) {
 push(@{$dir->{'members'}}, $also);
 
 # Create and add slave file
-local $base = $bind8::config{'slave_dir'} || &bind8::base_directory();
-local $file = &bind8::automatic_filename($d->{'dom'}, 0, $base);
+my $base = $bind8::config{'slave_dir'} || &bind8::base_directory();
+my $file = &bind8::automatic_filename($d->{'dom'}, 0, $base);
 push(@{$dir->{'members'}}, { 'name' => 'file',
 			     'values' => [ $file ] } );
+no strict "subs";
 &open_tempfile(ZONE, ">".&bind8::make_chroot($file), 0, 1);
 &close_tempfile(ZONE);
+use strict "subs";
 &bind8::set_ownership(&bind8::make_chroot($file));
 
 # Work out where to add
-local $pconf;
-local $indent = 0;
+my $pconf;
+my $indent = 0;
 if ($tmpl->{$module_name.'view'}) {
 	# Adding inside a view. This may use named.conf, or an include
 	# file references inside the view, if any
 	$pconf = &bind8::get_config_parent();
-	local $view = &virtual_server::get_bind_view($conf,
+	my $view = &virtual_server::get_bind_view($conf,
 			$tmpl->{$module_name.'view'});
 	if ($view) {
-		local $addfile = &bind8::add_to_file();
-		local $addfileok;
+		my $addfile = &bind8::add_to_file();
+		my $addfileok;
 		if ($bind8::config{'zones_file'} &&
 		    $view->{'file'} ne $bind8::config{'zones_file'}) {
 			# BIND module config asks for a file .. make
@@ -201,7 +207,7 @@ return 1;
 # Renames the zone and file if the domain name is changed.
 sub feature_modify
 {
-local ($d, $oldd) = @_;
+my ($d, $oldd) = @_;
 if ($d->{'dom'} ne $oldd->{'dom'}) {
 	&$virtual_server::first_print($text{'modify_bind'});
 
@@ -210,26 +216,26 @@ if ($d->{'dom'} ne $oldd->{'dom'}) {
 		}
 
 	# Get the zone object
-	local $z = &virtual_server::get_bind_zone($oldd->{'dom'});
+	my $z = &virtual_server::get_bind_zone($oldd->{'dom'});
 	if ($z) {
 		# Rename records file, for real and in .conf
-		local $file = &bind8::find("file", $z->{'members'});
-		local $fn = $file->{'values'}->[0];
-		$nfn = $fn;
-                $nfn =~ s/$oldd->{'dom'}/$d->{'dom'}/;
-                if ($fn ne $nfn) {
-                        &rename_logged(&bind8::make_chroot($fn),
-                                       &bind8::make_chroot($nfn))
-                        }
-                $file->{'values'}->[0] = $nfn;
-                $file->{'value'} = $nfn;
+		my $file = &bind8::find("file", $z->{'members'});
+		my $fn = $file->{'values'}->[0];
+		my $nfn = $fn;
+    $nfn =~ s/$oldd->{'dom'}/$d->{'dom'}/;
+    if ($fn ne $nfn) {
+      &rename_logged(&bind8::make_chroot($fn),
+         &bind8::make_chroot($nfn))
+      }
+    $file->{'values'}->[0] = $nfn;
+    $file->{'value'} = $nfn;
 
-                # Change zone in .conf file
-                $z->{'values'}->[0] = $d->{'dom'};
-                $z->{'value'} = $d->{'dom'};
-                &bind8::save_directive(&bind8::get_config_parent(),
-                                       [ $z ], [ $z ], 0);
-                &flush_file_lines();
+    # Change zone in .conf file
+    $z->{'values'}->[0] = $d->{'dom'};
+    $z->{'value'} = $d->{'dom'};
+    &bind8::save_directive(&bind8::get_config_parent(),
+      [ $z ], [ $z ], 0);
+      &flush_file_lines();
 
 		# Clear zone names caches
 		unlink($bind8::zone_names_cache);
@@ -255,7 +261,7 @@ return 1;
 # Called when this feature is disabled, or when the domain is being deleted
 sub feature_delete
 {
-local ($d) = @_;
+my ($d) = @_;
 &$virtual_server::first_print($text{'delete_bind'});
 
 if (defined(&virtual_server::obtain_lock_dns)) {
@@ -263,19 +269,19 @@ if (defined(&virtual_server::obtain_lock_dns)) {
 	}
 
 # Get the zone object
-local $z = &virtual_server::get_bind_zone($d->{'dom'});
+my $z = &virtual_server::get_bind_zone($d->{'dom'});
 if ($z) {
 	# Delete records file
-	local $file = &bind8::find("file", $z->{'members'});
+	my $file = &bind8::find("file", $z->{'members'});
 	if ($file) {
-		local $zonefile =
+		my $zonefile =
 		    &bind8::make_chroot($file->{'values'}->[0]);
 		&unlink_file($zonefile);
 		}
 
 	# Delete from .conf file
-	local $rootfile = &bind8::make_chroot($z->{'file'});
-	local $lref = &read_file_lines($rootfile);
+	my $rootfile = &bind8::make_chroot($z->{'file'});
+	my $lref = &read_file_lines($rootfile);
 	splice(@$lref, $z->{'line'}, $z->{'eline'} - $z->{'line'} + 1);
 	&flush_file_lines($rootfile);
 
@@ -303,10 +309,10 @@ return 1;
 # or 0 if not
 sub feature_import
 {
-local ($dname, $user, $db) = @_;
-local $z = &virtual_server::get_bind_zone($d->{'dom'});
+my ($dname, $user, $db) = @_;
+my $z = &virtual_server::get_bind_zone($dname);
 if ($z) {
-	local $type = &bind8::find("type", $z->{'members'});
+	my $type = &bind8::find("type", $z->{'members'});
 	if ($type && ($type->{'values'}->[0] eq 'slave' ||
 		      $type->{'values'}->[0] eq 'stub')) {
 		return 1;
@@ -319,7 +325,7 @@ return 0;
 # Returns an array of link objects for webmin modules for this feature
 sub feature_links
 {
-local ($d) = @_;
+my ($d) = @_;
 return ( { 'mod' => $module_name,
            'desc' => $text{'links_link'},
            'page' => 'edit.cgi?dom='.$d->{'dom'},
@@ -332,7 +338,7 @@ return ( { 'mod' => $module_name,
 # the Webmin user when this feature is enabled
 sub feature_webmin
 {
-local @doms = map { $_->{'dom'} } grep { $_->{$module_name} } @{$_[1]};
+my @doms = map { $_->{'dom'} } grep { $_->{$module_name} } @{$_[1]};
 if (@doms) {
         return ( [ $module_name,
                    { 'dom' => join(" ", @doms),
@@ -354,12 +360,12 @@ return ( [ $module_name, $text{'feat_module'} ] );
 # Saves the named.conf block for this domain.
 sub feature_backup
 {
-local ($d, $file) = @_;
+my ($d, $file) = @_;
 &$virtual_server::first_print($text{'backup_conf'});
-local $z = &virtual_server::get_bind_zone($d->{'dom'});
+my $z = &virtual_server::get_bind_zone($d->{'dom'});
 if ($z) {
-	local $lref = &read_file_lines($z->{'file'}, 1);
-	local $dstlref = &virtual_server::read_file_lines_as_domain_user($d, $file);
+	my $lref = &read_file_lines($z->{'file'}, 1);
+	my $dstlref = &virtual_server::read_file_lines_as_domain_user($d, $file);
 	@$dstlref = @$lref[$z->{'line'} .. $z->{'eline'}];
 	&virtual_server::flush_file_lines_as_domain_user($d, $file);
 	&$virtual_server::second_print($virtual_server::text{'setup_done'});
@@ -376,19 +382,19 @@ else {
 # return 1 on success or 0 on failure
 sub feature_restore
 {
-local ($d, $file) = @_;
+my ($d, $file) = @_;
 &$virtual_server::first_print($text{'restore_conf'});
 
 if (defined(&virtual_server::obtain_lock_dns)) {
 	&virtual_server::obtain_lock_dns($d, 1);
 	}
 
-local $z = &virtual_server::get_bind_zone($d->{'dom'});
-local $rv;
+my $z = &virtual_server::get_bind_zone($d->{'dom'});
+my $rv;
 if ($z) {
-	local $rootfile = &bind8::make_chroot($z->{'file'});
-	local $lref = &read_file_lines($rootfile);
-	local $srclref = &read_file_lines($file, 1);
+	my $rootfile = &bind8::make_chroot($z->{'file'});
+	my $lref = &read_file_lines($rootfile);
+	my $srclref = &read_file_lines($file, 1);
 	splice(@$lref, $z->{'line'}, $z->{'eline'}-$z->{'line'}+1, @$srclref);
 	&flush_file_lines($rootfile);
 
@@ -421,10 +427,10 @@ return $text{'backup_name'};
 # Checks if the zone exists and is a slave.
 sub feature_validate
 {
-local ($d) = @_;
-local $z = &virtual_server::get_bind_zone($d->{'dom'});
+my ($d) = @_;
+my $z = &virtual_server::get_bind_zone($d->{'dom'});
 if ($z) {
-	local $type = &bind8::find("type", $z->{'members'});
+	my $type = &bind8::find("type", $z->{'members'});
 	if ($type && ($type->{'values'}->[0] eq 'slave' ||
 		      $type->{'values'}->[0] eq 'stub')) {
 		return undef;
@@ -444,8 +450,8 @@ return 1;
 # Returns a field for master DNS server(s)
 sub feature_inputs
 {
-local ($d) = @_;
-local $tmpl = &virtual_server::get_template($d ? $d->{'template'} : 0);
+my ($d) = @_;
+my $tmpl = &virtual_server::get_template($d ? $d->{'template'} : 0);
 return &ui_table_row($text{'feat_master'},
 	&ui_opt_textbox($input_name."_master",
 			$tmpl->{$module_name."master"}, 30,
@@ -456,10 +462,10 @@ return &ui_table_row($text{'feat_master'},
 # Update the domain object with a custom master DNS server
 sub feature_inputs_parse
 {
-local ($d, $in) = @_;
+my ($d, $in) = @_;
 if (defined($in->{$input_name."_master"}) &&
     !$in->{$input_name."_master_def"}) {
-	local @ips = split(/\s+/, $in->{$input_name."_master"});
+	my @ips = split(/\s+/, $in->{$input_name."_master"});
 	foreach my $ip (@ips) {
 		&check_ipaddress($ip) || return &text('tmpl_eip', $ip);
 		}
@@ -484,9 +490,9 @@ return ( { 'name' => $module_name."-master",
 # Parse command-line arguments from feature_args
 sub feature_args_parse
 {
-local ($d, $args) = @_;
+my ($d, $args) = @_;
 if (defined($args->{$module_name."-master"})) {
-	local @ips = split(/\s+/, $args->{$module_name."-master"});
+	my @ips = split(/\s+/, $args->{$module_name."-master"});
 	foreach my $ip (@ips) {
 		&check_ipaddress($ip) || return "Invalid master DNS server IP address $ip";
 		}
@@ -500,12 +506,12 @@ return undef;
 # Returns HTML for editing per-template options for this plugin
 sub template_input
 {
-local ($tmpl) = @_;
+my ($tmpl) = @_;
 
 # Master IPs input
-local $v = $tmpl->{$module_name."master"};
+my $v = $tmpl->{$module_name."master"};
 $v = "none" if (!defined($v) && $tmpl->{'default'});
-local $rv;
+my $rv;
 $rv .= &ui_table_row($text{'tmpl_master'},
 	&ui_radio($input_name."_mode",
 		$v eq "" ? 0 : $v eq "none" ? 1 : 2,
@@ -516,8 +522,8 @@ $rv .= &ui_table_row($text{'tmpl_master'},
 
 # Add to view input, if any
 &virtual_server::require_bind();
-local $conf = &bind8::get_config();
-local @views = &bind8::find("view", $conf);
+my $conf = &bind8::get_config();
+my @views = &bind8::find("view", $conf);
 if (@views) {
 	$rv .= &ui_table_row($text{'tmpl_view'},
                 &ui_select($input_name."_view", $tmpl->{$module_name."view"},
@@ -533,7 +539,7 @@ return $rv;
 # template_input. All template fields must start with the module name.
 sub template_parse
 {
-local ($tmpl, $in) = @_;
+my ($tmpl, $in) = @_;
 
 # Parse master IPs field
 if ($in->{$input_name.'_mode'} == 0) {
@@ -543,7 +549,7 @@ elsif ($in->{$input_name.'_mode'} == 1) {
         $tmpl->{$module_name."master"} = "none";
         }
 else {
-	local @ips = split(/\s+/, $in->{$input_name});
+	my @ips = split(/\s+/, $in->{$input_name});
 	foreach my $ip (@ips) {
 		&check_ipaddress($ip) || &error(&text('tmpl_eip', $ip));
 		}
@@ -558,4 +564,3 @@ if (defined($in->{$input_name.'_view'})) {
 }
 
 1;
-

@@ -1,4 +1,7 @@
 #!/usr/local/bin/perl
+use strict;
+use warnings;
+our $module_name;
 
 =head1 modify-slavedns.pl
 
@@ -14,7 +17,10 @@ flag can be given multiple times to set more than one master.
 
 package virtualmin_slavedns;
 if (!$module_name) {
+	my $pwd;
+	no warnings "once";
 	$main::no_acl_check++;
+	use warnings "once";
 	$ENV{'WEBMIN_CONFIG'} ||= "/etc/webmin";
 	$ENV{'WEBMIN_VAR'} ||= "/var/webmin";
 	if ($0 =~ /^(.*)\/[^\/]+$/) {
@@ -27,18 +33,20 @@ if (!$module_name) {
 	require './virtualmin-slavedns-lib.pl';
 	$< == 0 || die "$0 must be run as root";
 	}
-@OLDARGV = @ARGV;
+my @OLDARGV = @ARGV;
 &virtual_server::set_all_null_print();
 
 # Parse command-line args
-$type = "fsfs";
+my $type = "fsfs";
+my $dname;
+my @mips;
 while(@ARGV > 0) {
-	local $a = shift(@ARGV);
+	my $a = shift(@ARGV);
 	if ($a eq "--domain") {
 		$dname = shift(@ARGV);
 		}
 	elsif ($a eq "--master") {
-		$mip = shift(@ARGV);
+		my $mip = shift(@ARGV);
 		&check_ipaddress($mip) ||
 			&usage("--master must be followed by an IP address");
 		push(@mips, $mip);
@@ -53,31 +61,31 @@ $dname || &usage("Missing --domain parameter");
 @mips || &usage("Missing --master parameter");
 
 # Get the domain
-$d = &virtual_server::get_domain_by("dom", $dname);
+my $d = &virtual_server::get_domain_by("dom", $dname);
 $d || &usage("No domain named $dname found");
 $d->{'virtualmin-slavedns'} ||
 	&usage("Slave DNS is not enabled for this domain");
 &virtual_server::obtain_lock_dns($d, 1);
-$z = &virtual_server::get_bind_zone($d->{'dom'});
+my $z = &virtual_server::get_bind_zone($d->{'dom'});
 $z || &usage("No DNS zone found for $d->{'dom'}");
-$rfile = &bind8::find('file', $z->{'members'});
+my $rfile = &bind8::find('file', $z->{'members'});
 &virtual_server::require_bind();
 
 # Run the before command
 &virtual_server::set_domain_envs($d, "MODIFY_DOMAIN", $d);
-$merr = &virtual_server::making_changes();
+my $merr = &virtual_server::making_changes();
 &virtual_server::reset_domain_envs($d);
 &usage(&virtual_server::text('save_emaking', "<tt>$merr</tt>"))
 	if (defined($merr));
 
 # Update the .conf file
-$masters = &bind8::find('masters', $z->{'members'});
-$oldmasters = { %$masters };
+my $masters = &bind8::find('masters', $z->{'members'});
+my $oldmasters = { %$masters };
 $masters->{'members'} = [ map { { 'name' => $_ } } @mips ];
 &bind8::save_directive($z, [ $oldmasters ], [ $masters ], 1);
-$allow = &bind8::find('allow-notify', $z->{'members'});
+my $allow = &bind8::find('allow-notify', $z->{'members'});
 if ($allow) {
-	$oldallow = { %$allow };
+	my $oldallow = { %$allow };
 	$allow->{'members'} = [ map { { 'name' => $_ } } @mips ];
 	&bind8::save_directive($z, [ $oldallow ], [ $allow ], 1);
 	}
@@ -85,9 +93,11 @@ if ($allow) {
 
 # Clear the zone file, to force a re-transfer
 if ($rfile) {
-	$rfilev = $rfile->{'value'};
+	my $rfilev = $rfile->{'value'};
+	no strict "subs";
 	&open_tempfile(ZONE, ">".&bind8::make_chroot($rfilev), 0, 1);
 	&close_tempfile(ZONE);
+	use strict "subs";
 	&bind8::set_ownership(&bind8::make_chroot($rfilev));
 	}
 if (&bind8::is_bind_running()) {
@@ -115,4 +125,3 @@ print "virtualmin modify-slavedns --domain name\n";
 print "                          [--master ip]+\n";
 exit(1);
 }
-
