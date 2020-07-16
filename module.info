@@ -1,5 +1,5 @@
 desc=Virtualmin Slave DNS
 depends=bind8 1.420 virtual-server/4.13
 hidden=1
-version=1.8
+version=1.11
 feedback=jcameron@webmin.com
